@@ -1,0 +1,23 @@
+environment: remote
+
+# Unsloth re-hosts common models ungated, so no HF auth required.
+model_name: unsloth/Llama-3.2-1B-Instruct
+
+dataset:
+  name: bitext/Bitext-customer-support-llm-chatbot-training-dataset
+  sample_size: 2000
+  seed: 42
+
+train:
+  use_unsloth: true
+  max_steps: 300
+  batch_size: 4
+  learning_rate: 2.0e-4
+  lora_r: 16
+  lora_alpha: 32
+  max_seq_length: 1024
+  output_dir: outputs/remote
+
+wandb:
+  mode: online
+  project: mlops-week1

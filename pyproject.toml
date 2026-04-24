@@ -1,0 +1,28 @@
+[project]
+name = "mlops-week1"
+version = "0.1.0"
+requires-python = ">=3.10"
+dependencies = [
+    "transformers>=4.44",
+    "peft>=0.12",
+    "datasets>=2.20",
+    "accelerate>=0.33",
+    "wandb>=0.17",
+    "pydantic>=2.8",
+    "pyyaml>=6.0",
+    "torch>=2.3",
+]
+
+[project.optional-dependencies]
+remote = [
+    "unsloth",
+    "bitsandbytes",
+]
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["src*"]

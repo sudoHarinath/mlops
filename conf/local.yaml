@@ -1,0 +1,24 @@
+environment: local
+
+# Tiny open model so the full pipeline runs on CPU in under a minute.
+# Real fine-tune happens in conf/remote.yaml on a GPU.
+model_name: HuggingFaceTB/SmolLM2-135M-Instruct
+
+dataset:
+  name: bitext/Bitext-customer-support-llm-chatbot-training-dataset
+  sample_size: 32
+  seed: 42
+
+train:
+  use_unsloth: false
+  max_steps: 2
+  batch_size: 1
+  learning_rate: 2.0e-4
+  lora_r: 8
+  lora_alpha: 16
+  max_seq_length: 256
+  output_dir: outputs/local
+
+wandb:
+  mode: disabled
+  project: mlops-week1
