@@ -1,6 +1,12 @@
+try:
+    import unsloth  # noqa: F401  must precede transformers/peft/trl so its patches land
+except ImportError:
+    pass
+
 import argparse
 import os
 
+import torch
 import wandb
 from peft import LoraConfig, get_peft_model
 from transformers import AutoModelForCausalLM, AutoTokenizer
@@ -58,6 +64,9 @@ def run(profile: str):
     model, tokenizer = build_unsloth(cfg) if cfg.train.use_unsloth else build_hf(cfg)
     tokenizer.model_max_length = cfg.train.max_seq_length
 
+    use_bf16 = torch.cuda.is_available() and torch.cuda.is_bf16_supported()
+    use_fp16 = torch.cuda.is_available() and not use_bf16
+
     cfg.train.output_dir.mkdir(parents=True, exist_ok=True)
     args = SFTConfig(
         output_dir=str(cfg.train.output_dir),
@@ -69,6 +78,8 @@ def run(profile: str):
         report_to=["wandb"] if cfg.wandb.mode != "disabled" else [],
         dataset_text_field="text",
         packing=False,
+        bf16=use_bf16,
+        fp16=use_fp16,
     )
     trainer = SFTTrainer(
         model=model,
