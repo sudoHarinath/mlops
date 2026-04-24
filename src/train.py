@@ -56,6 +56,7 @@ def run(profile: str):
 
     ds = prepare(cfg.dataset)
     model, tokenizer = build_unsloth(cfg) if cfg.train.use_unsloth else build_hf(cfg)
+    tokenizer.model_max_length = cfg.train.max_seq_length
 
     cfg.train.output_dir.mkdir(parents=True, exist_ok=True)
     args = SFTConfig(
@@ -66,7 +67,6 @@ def run(profile: str):
         logging_steps=1,
         save_strategy="no",
         report_to=["wandb"] if cfg.wandb.mode != "disabled" else [],
-        max_seq_length=cfg.train.max_seq_length,
         dataset_text_field="text",
         packing=False,
     )
