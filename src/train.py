@@ -3,13 +3,8 @@ import os
 
 import wandb
 from peft import LoraConfig, get_peft_model
-from transformers import (
-    AutoModelForCausalLM,
-    AutoTokenizer,
-    DataCollatorForLanguageModeling,
-    Trainer,
-    TrainingArguments,
-)
+from transformers import AutoModelForCausalLM, AutoTokenizer
+from trl import SFTConfig, SFTTrainer
 
 from .config import Config, load_config
 from .data import prepare
@@ -48,13 +43,6 @@ def build_hf(cfg: Config):
     return get_peft_model(model, lora), tokenizer
 
 
-def tokenize(ds, tokenizer, max_length: int):
-    def _tok(batch):
-        return tokenizer(batch["text"], truncation=True, max_length=max_length)
-
-    return ds.map(_tok, batched=True, remove_columns=["text"])
-
-
 def run(profile: str):
     cfg = load_config(profile)
 
@@ -68,10 +56,9 @@ def run(profile: str):
 
     ds = prepare(cfg.dataset)
     model, tokenizer = build_unsloth(cfg) if cfg.train.use_unsloth else build_hf(cfg)
-    ds = tokenize(ds, tokenizer, cfg.train.max_seq_length)
 
     cfg.train.output_dir.mkdir(parents=True, exist_ok=True)
-    args = TrainingArguments(
+    args = SFTConfig(
         output_dir=str(cfg.train.output_dir),
         max_steps=cfg.train.max_steps,
         per_device_train_batch_size=cfg.train.batch_size,
@@ -79,9 +66,16 @@ def run(profile: str):
         logging_steps=1,
         save_strategy="no",
         report_to=["wandb"] if cfg.wandb.mode != "disabled" else [],
+        max_seq_length=cfg.train.max_seq_length,
+        dataset_text_field="text",
+        packing=False,
     )
-    collator = DataCollatorForLanguageModeling(tokenizer, mlm=False)
-    trainer = Trainer(model=model, args=args, train_dataset=ds, data_collator=collator)
+    trainer = SFTTrainer(
+        model=model,
+        tokenizer=tokenizer,
+        args=args,
+        train_dataset=ds,
+    )
     trainer.train()
 
     adapter_dir = cfg.train.output_dir / "adapter"
